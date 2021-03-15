@@ -2,7 +2,7 @@ from tkinter import *
 import tkinter as tk
 from tkinter import messagebox
 import easygui
-from PIL import Image, ImageDraw 
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance
                                       
 def start(flag):
     def decrypt():
@@ -13,25 +13,34 @@ def start(flag):
 #########################################################################################################################
         def open_file():
             de_colors = []
-            input_file = easygui.fileopenbox(filetypes=["*.*"])
+            input_file = easygui.fileopenbox(filetypes=["*.png"])
             image = Image.open(input_file)  # Открываем изображение
             draw = ImageDraw.Draw(image)  # Создаем инструмент для рисования
             width = image.size[0]  # Определяем ширину
             height = image.size[1]  # Определяем высоту
             pix = image.load()
-            for x in range(0,1):
-                for y in range(0,1):
+            for y in range(0, height,60):
+                for x in range(0, width, 60):
                     s = ""
-                    r = pix[x, y][0] #узнаём значение красного цвета пикселя
-                    s += from_10(r, 16)
-                    g = pix[x, y][1] #зелёного
-                    s += from_10(g, 16)
-                    b = pix[x, y][2] #синего
-                    s += from_10(b, 16)
+                    r = pix[x+5, y][0] #узнаём значение красного цвета пикселя
+                    t = from_10(r, 16)
+                    s += "0"*(2-len(t))+t
+
+                    g = pix[x+5, y][1] #зелёного
+                    t = from_10(g, 16)
+                    s += "0"*(2-len(t))+t
+
+                    b = pix[x+5, y][2] #синего
+                    t = from_10(b, 16)
+                    s += "0"*(2-len(t))+t
+                    if s == "FFFFFF":
+                        break
                     de_colors.append(s)
-            answer = Label(text = color_to_text(de_colors))
-            answer.place(x= 100, y = 100)
-            widgets_crypte.append(answer)
+            txt = color_to_text(de_colors)
+            for j in range(len(txt)//37+1):
+                answer = Label(text = txt[j*38:38+38*j], font = "Verdana 12", bg = 'white')
+                answer.place(x= 35, y = 240 + 20*j)
+                widgets_crypte.append(answer)
 #########################################################################################################################
         def color_to_text(colors):
             tmp = ""
@@ -48,22 +57,23 @@ def start(flag):
         flag = 1
         widgets_crypte = []
 
-        label_greet = Label(text = "Выберите файл с\nзашифрованным сообщением", justify=CENTER, font="Verdana 14")
-        label_greet.place(x = 100, y = 200)
+        label_greet = Label(text = "Выберите файл с\nзашифрованным сообщением", justify=CENTER, font="Verdana 14", bg = 'white')
+        label_greet.place(x = 100, y = 50)
         widgets_crypte.append(label_greet)
 
-        button_enter = Button(text = "Выбрать", command = open_file)
-        button_enter.place(x = 150, y = 50)
+        button_enter = Button(text = "Выбрать", command = open_file, width = 30, height = 3)
+        button_enter.place(x = 135, y = 150)
         widgets_crypte.append(button_enter)
 
         button_exit = Button(text = "Вернуться назад", command = exit)
-        button_exit.place(x = 100, y = 300)
+        button_exit.place(x = 380, y = 460)
         widgets_crypte.append(button_exit)
 
 #########################################################################################################################
 
     def encrypt():
         flag = 1
+        array_color = []
         def create_color(crypt):
             tmp = str(crypt)
             l = len(tmp)
@@ -83,15 +93,37 @@ def start(flag):
             return colors
 
         def print_color(colors):
-
+            if array_color:
+                for i in array_color:
+                    i.place_forget()
+                array_color.clear()
+            white = (255, 255, 255)
+            image1 = Image.new("RGB", (530, 530), white)
+            draw = ImageDraw.Draw(image1)
             coord_x = 10 
-            coord_x2 = 50
+            coord_y = 150
+            x1, y1, x2, y2 = 0, 0, 50, 50
+            count = 0
+            ind = 0
             for i in range(len(colors) - 1, -1, -1):
                 mycolor = '#'+ colors[i]
-                field.create_rectangle(coord_x, 170, coord_x2, 240, fill = mycolor)
-                
+                temp = Label(bg = mycolor, width = 5, height = 3)
+                temp.place(x = coord_x, y = coord_y)
+                ind += 1
+                widgets_crypte.append(temp)
+                array_color.append(temp)
+                draw.rectangle(((x1, y1), (x2, y2)), fill = mycolor)
+                x1 += 60; x2 += 60
                 coord_x += 50
-                coord_x2 += 50
+                #coord_y += 50
+                if (len(colors) - i) % 9 == 0:
+                    count += 1
+                    x1, y1, x2, y2 = 0, 60 * count, 50, 50 + (60 * count)
+                if ind % 10 == 0:
+                    coord_x = 10
+                    coord_y += 70
+            filename = "my_drawing.png"
+            image1.save(filename)
 
 #########################################################################################################################
 
@@ -113,30 +145,30 @@ def start(flag):
         widgets_crypte = []
 
         label_enter = Label(text = "Введите сообщение:", justify=CENTER, font="Verdana 14", bg = 'white')
-        label_enter.place(x = 80, y = 50)
+        label_enter.place(x = 45, y = 40)
         widgets_crypte.append(label_enter)
     
         message = StringVar()
-        e = Text(textvariable = message, width = 50, height = 5)
-        scroll = Scrollbar(command=e.yview)
-        scroll.pack(side=LEFT, fill=Y)
-        e.config(yscrollcommand=scroll.set)
-        e.place(x = 100, y = 50)
+        e = Entry(textvariable = message, width = 60)
+        #scroll = Scrollbar(command=e.yview)
+        #scroll.pack(side=LEFT, fill=Y)
+        #e.config(yscrollcommand=scroll.set)
+        e.place(x = 45, y = 100)
         widgets_crypte.append(e)
 
-        button_enter = Button(text = "Ввод", command = enter_message)
-        button_enter.place(x = 150, y = 50)
+        button_enter = Button(text = "Ввод", command = enter_message, font="Verdana 10")
+        button_enter.place(x = 450, y = 98)
         widgets_crypte.append(button_enter)
 
         button_exit = Button(text = "Вернуться назад", command = exit)
-        button_exit.place(x = 100, y = 300)
+        button_exit.place(x = 380, y = 460)
         widgets_crypte.append(button_exit)
 
     if flag == 0:
         root = Tk()
         root.title("Шифровальщик")
-        #root.resizable(width=False, height=False)
-        field = Canvas(root, width=500, height=500, bg='white')
+        root.resizable(width=False, height=False)
+        field = Canvas(root, width=510, height=500, bg='white')
         field.pack()
 
     widgets_main = []
@@ -153,15 +185,6 @@ def start(flag):
     button_decrypt.place(x = 135, y = 300)
     widgets_main.append(button_decrypt)
    
-
-
-
-
-
-
-
-
-
 
     if flag == 0:
         root.mainloop()
